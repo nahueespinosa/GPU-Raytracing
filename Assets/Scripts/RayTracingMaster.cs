@@ -116,6 +116,7 @@ public class RayTracingMaster : MonoBehaviour
     RayTracingShader.SetVector("_DirectionalLight", new Vector4(l.x, l.y, l.z, DirectionalLight.intensity));
 
     RayTracingShader.SetBuffer(0, "_Spheres", sphereBuffer);
+    RayTracingShader.SetFloat("_Seed", Random.value);
   }
 
   // Called when camera finished rendering

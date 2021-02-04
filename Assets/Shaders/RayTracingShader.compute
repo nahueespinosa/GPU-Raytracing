@@ -35,6 +35,16 @@ struct Sphere {
 
 StructuredBuffer<Sphere> _Spheres;
 
+float2 _Pixel;
+float _Seed;
+
+float rand()
+{
+  float result = frac(sin(_Seed / 100.0f * dot(_Pixel, float2(12.9898f, 78.233f))) * 43758.5453f);
+  _Seed += 1.0f;
+  return result;
+}
+
 Ray CreateRay(float3 origin, float3 direction) {
   Ray ray;
   ray.origin = origin;
@@ -147,6 +157,8 @@ void CSMain (uint3 id : SV_DispatchThreadID) {
 
   // Get a ray for the UVs
   Ray ray = CreateCameraRay(uv);
+
+  _Pixel = id.xy;
 
   float3 result = float3(0, 0, 0);
   for (int i = 0; i < 8; i++) {
