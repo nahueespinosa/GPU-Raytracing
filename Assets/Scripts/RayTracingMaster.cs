@@ -77,9 +77,22 @@ public class RayTracingMaster : MonoBehaviour
       if (!skip) {
         // Albedo and specular color
         Color color = Random.ColorHSV();
-        bool metal = Random.value < 0.5f;
+
+        bool metal = false;
+        bool orb = false;
+
+        float random = Random.value;
+
+        if (random < 0.5f) {
+          metal = true;
+        } else if (random < 0.6f) {
+          orb = true;
+        }
+
         sphere.albedo = metal ? Vector3.zero : new Vector3(color.r, color.g, color.b);
         sphere.specular = metal ? new Vector3(color.r, color.g, color.b) : Vector3.one * 0.04f;
+        sphere.emission = orb ? Vector3.one : Vector3.zero;
+        sphere.smoothness = 1.0f;
 
         // Add the sphere to the list
         spheres.Add(sphere);

@@ -100,9 +100,9 @@ void IntersectGroundPlane(Ray ray, inout RayHit bestHit) {
     bestHit.distance = t;
     bestHit.position = ray.origin + t * ray.direction;
     bestHit.normal = float3(0.0f, 1.0f, 0.0f);
-    bestHit.albedo = float3(0.8f, 0.8f, 0.8f);
-    bestHit.specular = float3(0.6f, 0.6f, 0.6f);
-    bestHit.smoothness = 1.0f;
+    bestHit.albedo = 0.5f;
+    bestHit.specular = 0.03f;
+    bestHit.smoothness = 0.2f;
     bestHit.emission = float3(0.0f, 0.0f, 0.0f);
   }
 }
@@ -123,6 +123,8 @@ void IntersectSphere(Ray ray, inout RayHit bestHit, Sphere sphere) {
     bestHit.normal = normalize(bestHit.position - sphere.position);
     bestHit.albedo = sphere.albedo;
     bestHit.specular = sphere.specular;
+    bestHit.smoothness = sphere.smoothness;
+    bestHit.emission = sphere.emission;
   }
 }
 
