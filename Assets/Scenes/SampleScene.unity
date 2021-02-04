@@ -225,6 +225,7 @@ GameObject:
   - component: {fileID: 963194227}
   - component: {fileID: 963194226}
   - component: {fileID: 963194229}
+  - component: {fileID: 963194230}
   m_Layer: 0
   m_Name: Main Camera
   m_TagString: MainCamera
@@ -312,6 +313,20 @@ MonoBehaviour:
   RayTracingShader: {fileID: 7200000, guid: 9290ae4eb5313108b8b60c31dc406eeb, type: 3}
   SkyboxTexture: {fileID: 2800000, guid: 2276b426b40679564a9d81c6b8a70d41, type: 3}
   DirectionalLight: {fileID: 705507994}
-  SphereRadius: {x: 3, y: 8}
-  SpheresMax: 100
+  SphereRadius: {x: 5, y: 30}
+  SpheresMax: 10000
   SpherePlacementRadius: 100
+  SphereSeed: 1223832719
+--- !u!114 &963194230
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 963194225}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2ebbffe842cafb47282081728327c181, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  objectToFollow: {fileID: 0}

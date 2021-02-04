@@ -16,9 +16,13 @@ public class RayTracingMaster : MonoBehaviour
 
   public float SpherePlacementRadius = 100.0f;
 
+  public int SphereSeed;
+
   private ComputeBuffer sphereBuffer;
 
   private RenderTexture target;
+
+  private RenderTexture converged;
 
   private new Camera camera;
 
@@ -45,6 +49,8 @@ public class RayTracingMaster : MonoBehaviour
 
   private void SetUpScene() {
     List<Sphere> spheres = new List<Sphere>();
+
+    Random.InitState(SphereSeed);
 
     // Add a number of random spheres
     for (int i = 0; i < SpheresMax; i++) {
@@ -120,7 +126,8 @@ public class RayTracingMaster : MonoBehaviour
 
   private void Render(RenderTexture destination) {
     // Make sure we have a current render target
-    InitRenderTexture();
+    InitRenderTexture(ref target);
+    InitRenderTexture(ref converged);
 
     // Set the target and dispatch the compute shader
     RayTracingShader.SetTexture(0, "Result", target);
@@ -133,21 +140,22 @@ public class RayTracingMaster : MonoBehaviour
       addMaterial = new Material(Shader.Find("Hidden/AddShader"));
 
     addMaterial.SetFloat("_Sample", currentSample);
-    Graphics.Blit(target, destination, addMaterial);
+    Graphics.Blit(target, converged, addMaterial);
+    Graphics.Blit(converged, destination);
     currentSample++;
   }
 
-  private void InitRenderTexture() {
-    if (target == null || target.width != Screen.width || target.height != Screen.height) {
+  private void InitRenderTexture(ref RenderTexture texture) {
+    if (texture == null || texture.width != Screen.width || texture.height != Screen.height) {
       // Release render texture if we already have one
-      if (target != null)
-        target.Release();
+      if (texture != null)
+        texture.Release();
 
       // Get a render target for Ray Tracing
-      target = new RenderTexture(Screen.width, Screen.height, 0, 
+      texture = new RenderTexture(Screen.width, Screen.height, 0, 
         RenderTextureFormat.ARGBFloat, RenderTextureReadWrite.Linear);
-      target.enableRandomWrite = true;
-      target.Create();
+      texture.enableRandomWrite = true;
+      texture.Create();
     }
   }
 }
