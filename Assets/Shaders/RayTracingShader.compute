@@ -171,7 +171,7 @@ float3 Shade(inout Ray ray, RayHit hit) {
       ray.direction = SampleHemisphere(hit.normal);
       ray.energy *= (1.0f / diffChance) * 2 * hit.albedo * sdot(hit.normal, ray.direction);
     }
-    
+
     return 0.0f;
   } else {
     // Erase the ray's energy - the sky doesn't reflect anything
@@ -180,7 +180,7 @@ float3 Shade(inout Ray ray, RayHit hit) {
     // Sample the skybox and write it
     float theta = acos(ray.direction.y) / -PI;
     float phi = atan2(ray.direction.x, -ray.direction.z) / -PI * 0.5f;
-    return _SkyboxTexture.SampleLevel(sampler_SkyboxTexture, float2(phi, theta), 0).xyz;
+    return _SkyboxTexture.SampleLevel(sampler_SkyboxTexture, float2(phi, theta), 0).xyz + float3(0.5f, 0.5f, 0.5f);
   }
 }
 
