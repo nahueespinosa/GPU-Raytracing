@@ -16,9 +16,13 @@ public class RayTracingMaster : MonoBehaviour
 
   public float SpherePlacementRadius = 100.0f;
 
+  public int SphereSeed;
+
   private ComputeBuffer sphereBuffer;
 
   private RenderTexture target;
+
+  private RenderTexture converged;
 
   private new Camera camera;
 
@@ -31,6 +35,8 @@ public class RayTracingMaster : MonoBehaviour
     public float radius;
     public Vector3 albedo;
     public Vector3 specular;
+    public float smoothness;
+    public Vector3 emission;
   };
 
   private void OnEnable() {
@@ -45,6 +51,8 @@ public class RayTracingMaster : MonoBehaviour
 
   private void SetUpScene() {
     List<Sphere> spheres = new List<Sphere>();
+
+    Random.InitState(SphereSeed);
 
     // Add a number of random spheres
     for (int i = 0; i < SpheresMax; i++) {
@@ -69,9 +77,22 @@ public class RayTracingMaster : MonoBehaviour
       if (!skip) {
         // Albedo and specular color
         Color color = Random.ColorHSV();
-        bool metal = Random.value < 0.5f;
+
+        bool metal = false;
+        bool orb = false;
+
+        float random = Random.value;
+
+        if (random < 0.5f) {
+          metal = true;
+        } else if (random < 0.6f) {
+          orb = true;
+        }
+
         sphere.albedo = metal ? Vector3.zero : new Vector3(color.r, color.g, color.b);
         sphere.specular = metal ? new Vector3(color.r, color.g, color.b) : Vector3.one * 0.04f;
+        sphere.emission = orb ? Vector3.one : Vector3.zero;
+        sphere.smoothness = 1.0f;
 
         // Add the sphere to the list
         spheres.Add(sphere);
@@ -110,6 +131,7 @@ public class RayTracingMaster : MonoBehaviour
     RayTracingShader.SetVector("_DirectionalLight", new Vector4(l.x, l.y, l.z, DirectionalLight.intensity));
 
     RayTracingShader.SetBuffer(0, "_Spheres", sphereBuffer);
+    RayTracingShader.SetFloat("_Seed", Random.value);
   }
 
   // Called when camera finished rendering
@@ -120,7 +142,8 @@ public class RayTracingMaster : MonoBehaviour
 
   private void Render(RenderTexture destination) {
     // Make sure we have a current render target
-    InitRenderTexture();
+    InitRenderTexture(ref target);
+    InitRenderTexture(ref converged);
 
     // Set the target and dispatch the compute shader
     RayTracingShader.SetTexture(0, "Result", target);
@@ -133,21 +156,22 @@ public class RayTracingMaster : MonoBehaviour
       addMaterial = new Material(Shader.Find("Hidden/AddShader"));
 
     addMaterial.SetFloat("_Sample", currentSample);
-    Graphics.Blit(target, destination, addMaterial);
+    Graphics.Blit(target, converged, addMaterial);
+    Graphics.Blit(converged, destination);
     currentSample++;
   }
 
-  private void InitRenderTexture() {
-    if (target == null || target.width != Screen.width || target.height != Screen.height) {
+  private void InitRenderTexture(ref RenderTexture texture) {
+    if (texture == null || texture.width != Screen.width || texture.height != Screen.height) {
       // Release render texture if we already have one
-      if (target != null)
-        target.Release();
+      if (texture != null)
+        texture.Release();
 
       // Get a render target for Ray Tracing
-      target = new RenderTexture(Screen.width, Screen.height, 0, 
+      texture = new RenderTexture(Screen.width, Screen.height, 0, 
         RenderTextureFormat.ARGBFloat, RenderTextureReadWrite.Linear);
-      target.enableRandomWrite = true;
-      target.Create();
+      texture.enableRandomWrite = true;
+      texture.Create();
     }
   }
 }
