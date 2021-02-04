@@ -48,6 +48,10 @@ float sdot(float3 x, float3 y, float f = 1.0f) {
   return saturate(dot(x, y) * f);
 }
 
+float energy(float3 color) {
+  return dot(color, 1.0f / 3.0f);
+}
+
 Ray CreateRay(float3 origin, float3 direction) {
   Ray ray;
   ray.origin = origin;
@@ -146,15 +150,28 @@ RayHit Trace(Ray ray) {
 
 float3 Shade(inout Ray ray, RayHit hit) {
   if (hit.distance < 1.#INF) {
-    // Reflect the ray and multiply energy with specular reflection
-    ray.origin = hit.position + hit.normal * 0.001f;
-    float3 reflected = reflect(ray.direction, hit.normal);
-    ray.direction = SampleHemisphere(hit.normal);
-    float3 diffuse = 2 * min(1.0f - hit.specular, hit.albedo);
-    float alpha = 15.0f;
-    float3 specular = hit.specular * (alpha + 2) * pow(sdot(ray.direction, reflected), alpha);
-    ray.energy *= (diffuse + specular) * sdot(hit.normal, ray.direction);
+    // Calculate chances of diffuse and specular reflection
+    hit.albedo = min(1.0f - hit.specular, hit.albedo);
+    float specChance = energy(hit.specular);
+    float diffChance = energy(hit.albedo);
+    float sum = specChance + diffChance;
+    specChance /= sum;
+    diffChance /= sum;
 
+    // Roulette-select the ray's path
+    float roulette = rand();
+    if (roulette < specChance) {
+      // Specular reflection
+      ray.origin = hit.position + hit.normal * 0.001f;
+      ray.direction = reflect(ray.direction, hit.normal);
+      ray.energy *= (1.0f / specChance) * hit.specular * sdot(hit.normal, ray.direction);
+    } else {
+      // Diffuse reflection
+      ray.origin = hit.position + hit.normal * 0.001f;
+      ray.direction = SampleHemisphere(hit.normal);
+      ray.energy *= (1.0f / diffChance) * 2 * hit.albedo * sdot(hit.normal, ray.direction);
+    }
+    
     return 0.0f;
   } else {
     // Erase the ray's energy - the sky doesn't reflect anything
