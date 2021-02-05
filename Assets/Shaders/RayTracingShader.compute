@@ -39,6 +39,16 @@ struct Sphere {
 
 StructuredBuffer<Sphere> _Spheres;
 
+struct MeshObject {
+  float4x4 localToWorldMatrix;
+  int indices_offset;
+  int indices_count;
+};
+
+StructuredBuffer<MeshObject> _MeshObjects;
+StructuredBuffer<float3> _Vertices;
+StructuredBuffer<int> _Indices;
+
 float2 _Pixel;
 float _Seed;
 
@@ -128,6 +138,48 @@ void IntersectSphere(Ray ray, inout RayHit bestHit, Sphere sphere) {
   }
 }
 
+static const float EPSILON = 1e-8;
+
+bool IntersectTriangle_MT97(Ray ray, float3 vert0, float3 vert1, float3 vert2,
+  inout float t, inout float u, inout float v)
+{
+  // Find vectors for two edges sharing vert0
+  float3 edge1 = vert1 - vert0;
+  float3 edge2 = vert2 - vert0;
+
+  // Begin calculating determinant - also used to calculate U parameter
+  float3 pvec = cross(ray.direction, edge2);
+
+  // If determinant is near zero, ray lies in plane of triangle
+  float det = dot(edge1, pvec);
+
+  // Use backface culling
+  if (det < EPSILON)
+    return false;
+  float inv_det = 1.0f / det;
+
+  // Calculate distance from vert0 to ray origin
+  float3 tvec = ray.origin - vert0;
+
+  // Calculate U parameter and test bounds
+  u = dot(tvec, pvec) * inv_det;
+  if (u < 0.0 || u > 1.0f)
+    return false;
+
+  // Prepare to test V parameter
+  float3 qvec = cross(tvec, edge1);
+
+  // Calculate V parameter and test bounds
+  v = dot(ray.direction, qvec) * inv_det;
+  if (v < 0.0 || u + v > 1.0f)
+    return false;
+
+  // Calculate t, ray intersects triangle
+  t = dot(edge2, qvec) * inv_det;
+
+  return true;
+}
+
 float3x3 GetTangentSpace(float3 normal) {
   // Choose a helper vector for the cross product
   float3 helper = float3(1, 0, 0);
@@ -159,6 +211,24 @@ RayHit Trace(Ray ray) {
   for (uint i = 0; i < numSpheres; i++) {
     IntersectSphere(ray, bestHit, _Spheres[i]);
   }
+
+  float3 v0 = float3(-150, 0, -150);
+  float3 v1 = float3(150, 0, -150);
+  float3 v2 = float3(0, 150 * sqrt(2), -150);
+  float t, u, v;
+
+  if (IntersectTriangle_MT97(ray, v0, v1, v2, t, u, v)) {
+    if (t > 0 && t < bestHit.distance) {
+      bestHit.distance = t;
+      bestHit.position = ray.origin + t * ray.direction;
+      bestHit.normal = normalize(cross(v1 - v0, v2 - v0));
+      bestHit.albedo = 0.00f;
+      bestHit.specular = 0.65f * float3(1, 0.4f, 0.2f);
+      bestHit.smoothness = 0.9f;
+      bestHit.emission = 0.0f;
+    }
+  }
+
   return bestHit;
 }
 
